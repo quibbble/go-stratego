@@ -13,6 +13,11 @@ type StrategoMoreOptions struct {
 	Seed int64
 }
 
+// StategoSnapshotData is the game data unique to Statego
+type StategoSnapshotData struct {
+	Board [BoardSize][BoardSize]*Unit
+}
+
 type MoveUnitActionDetails struct {
 	UnitRow, UnitColumn int
 	MoveRow, MoveColumn int

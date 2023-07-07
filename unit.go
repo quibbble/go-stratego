@@ -20,6 +20,13 @@ func NewUnit(typ, team string) *Unit {
 	}
 }
 
+func Water() *Unit {
+	return &Unit{
+		typ:  "water",
+		team: nil,
+	}
+}
+
 func (u *Unit) Attack(unit *Unit) (winner *Unit, err error) {
 	if *u.team == *unit.team {
 		return nil, fmt.Errorf("cannot attack unit on same team")

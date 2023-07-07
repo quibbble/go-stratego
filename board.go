@@ -13,12 +13,8 @@ type Board struct {
 
 func NewEmptyBoard() *Board {
 	board := [BoardSize][BoardSize]*Unit{}
-	water := &Unit{
-		typ:  "water",
-		team: nil,
-	}
 	for _, pair := range [][]int{{4, 2}, {4, 3}, {5, 2}, {5, 3}, {4, 6}, {4, 7}, {5, 6}, {5, 7}} {
-		board[pair[0]][pair[1]] = water
+		board[pair[0]][pair[1]] = Water()
 	}
 	return &Board{
 		board: board,

@@ -114,18 +114,42 @@ func (s *Stratego) GetSnapshot(team ...string) (*bg.BoardGameSnapshot, error) {
 			Status: bgerr.StatusTooManyTeams,
 		}
 	}
-	var targets []*bg.BoardGameAction
+	var targets = []*bg.BoardGameAction{}
 	if len(s.state.winners) == 0 && (len(team) == 0 || (len(team) == 1 && team[0] == s.state.turn)) {
 		targets = s.state.targets()
 	}
+
+	board := [BoardSize][BoardSize]*Unit{}
+	for r, row := range s.state.board.board {
+		for c, unit := range row {
+			if unit != nil {
+				if unit.team != nil {
+					if len(team) == 1 {
+						if *unit.team == team[0] {
+							board[r][c] = NewUnit(unit.typ, *unit.team)
+						} else {
+							board[r][c] = NewUnit("", *unit.team)
+						}
+					} else {
+						board[r][c] = NewUnit("", *unit.team)
+					}
+				} else {
+					board[r][c] = Water()
+				}
+			}
+		}
+	}
+
 	return &bg.BoardGameSnapshot{
-		Turn:     s.state.turn,
-		Teams:    s.state.teams,
-		Winners:  s.state.winners,
-		MoreData: nil,
-		Targets:  targets,
-		Actions:  s.actions,
-		Message:  s.state.message(),
+		Turn:    s.state.turn,
+		Teams:   s.state.teams,
+		Winners: s.state.winners,
+		MoreData: StategoSnapshotData{
+			Board: board,
+		},
+		Targets: targets,
+		Actions: s.actions,
+		Message: s.state.message(),
 	}, nil
 }
 

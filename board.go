@@ -26,23 +26,23 @@ func (b *Board) possibleMoves(row, col int) [][]int {
 		return make([][]int, 0)
 	}
 	unit := b.board[row][col]
-	if unit == nil || unit.team == nil {
+	if unit == nil || unit.Team == nil {
 		return make([][]int, 0)
 	}
-	if unit.typ == "bomb" || unit.typ == "flag" {
+	if unit.Type == "bomb" || unit.Type == "flag" {
 		return make([][]int, 0)
 	}
 	moves := make([][]int, 0)
-	if row+1 < BoardSize && (b.board[row+1][col] == nil || (b.board[row+1][col].team != nil && *b.board[row+1][col].team != *unit.team)) {
+	if row+1 < BoardSize && (b.board[row+1][col] == nil || (b.board[row+1][col].Team != nil && *b.board[row+1][col].Team != *unit.Team)) {
 		moves = append(moves, []int{1, 0})
 	}
-	if row-1 >= 0 && (b.board[row-1][col] == nil || (b.board[row-1][col].team != nil && *b.board[row-1][col].team != *unit.team)) {
+	if row-1 >= 0 && (b.board[row-1][col] == nil || (b.board[row-1][col].Team != nil && *b.board[row-1][col].Team != *unit.Team)) {
 		moves = append(moves, []int{-1, 0})
 	}
-	if col+1 < BoardSize && (b.board[row][col+1] == nil || (b.board[row][col+1].team != nil && *b.board[row][col+1].team != *unit.team)) {
+	if col+1 < BoardSize && (b.board[row][col+1] == nil || (b.board[row][col+1].Team != nil && *b.board[row][col+1].Team != *unit.Team)) {
 		moves = append(moves, []int{0, 1})
 	}
-	if col-1 >= 0 && (b.board[row][col-1] == nil || (b.board[row][col-1].team != nil && *b.board[row][col-1].team != *unit.team)) {
+	if col-1 >= 0 && (b.board[row][col-1] == nil || (b.board[row][col-1].Team != nil && *b.board[row][col-1].Team != *unit.Team)) {
 		moves = append(moves, []int{0, -1})
 	}
 	return moves
@@ -53,7 +53,7 @@ func (b *Board) numActive(team string) int {
 	count := 0
 	for _, row := range b.board {
 		for _, unit := range row {
-			if unit != nil && *unit.team == team && unit.typ != "bomb" && unit.typ != "flag" {
+			if unit != nil && *unit.Team == team && unit.Type != "bomb" && unit.Type != "flag" {
 				count += 1
 			}
 		}

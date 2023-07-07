@@ -9,49 +9,49 @@ var UnitTyes = []string{
 }
 
 type Unit struct {
-	typ  string
-	team *string
+	Type string
+	Team *string
 }
 
 func NewUnit(typ, team string) *Unit {
 	return &Unit{
-		typ:  typ,
-		team: &team,
+		Type: typ,
+		Team: &team,
 	}
 }
 
 func Water() *Unit {
 	return &Unit{
-		typ:  "water",
-		team: nil,
+		Type: "water",
+		Team: nil,
 	}
 }
 
 func (u *Unit) Attack(unit *Unit) (winner *Unit, err error) {
-	if *u.team == *unit.team {
+	if *u.Team == *unit.Team {
 		return nil, fmt.Errorf("cannot attack unit on same team")
 	}
-	if u.typ == "flag" || u.typ == "bomb" {
-		return nil, fmt.Errorf("%s cannot attack", u.typ)
+	if u.Type == "flag" || u.Type == "bomb" {
+		return nil, fmt.Errorf("%s cannot attack", u.Type)
 	}
 	// spy -> marshal case
-	if u.typ == "spy" && unit.typ == "marshal" {
+	if u.Type == "spy" && unit.Type == "marshal" {
 		return u, nil
 	}
 	// miner -> bomb case
-	if u.typ == "miner" && unit.typ == "bomb" {
+	if u.Type == "miner" && unit.Type == "bomb" {
 		return u, nil
 	}
 	// any -> bomb case
-	if unit.typ == "bomb" {
+	if unit.Type == "bomb" {
 		return nil, nil
 	}
 	// same type case
-	if u.typ == unit.typ {
+	if u.Type == unit.Type {
 		return nil, nil
 	}
 	// default case
-	if indexOf(UnitTyes, u.typ) > indexOf(UnitTyes, unit.typ) {
+	if indexOf(UnitTyes, u.Type) > indexOf(UnitTyes, unit.Type) {
 		return u, nil
 	} else {
 		return unit, nil

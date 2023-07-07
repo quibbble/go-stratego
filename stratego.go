@@ -123,15 +123,15 @@ func (s *Stratego) GetSnapshot(team ...string) (*bg.BoardGameSnapshot, error) {
 	for r, row := range s.state.board.board {
 		for c, unit := range row {
 			if unit != nil {
-				if unit.team != nil {
+				if unit.Team != nil {
 					if len(team) == 1 {
-						if *unit.team == team[0] {
-							board[r][c] = NewUnit(unit.typ, *unit.team)
+						if *unit.Team == team[0] {
+							board[r][c] = NewUnit(unit.Type, *unit.Team)
 						} else {
-							board[r][c] = NewUnit("", *unit.team)
+							board[r][c] = NewUnit("", *unit.Team)
 						}
 					} else {
-						board[r][c] = NewUnit("", *unit.team)
+						board[r][c] = NewUnit("", *unit.Team)
 					}
 				} else {
 					board[r][c] = Water()

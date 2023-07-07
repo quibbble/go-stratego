@@ -2,6 +2,7 @@ package go_stratego
 
 import (
 	"fmt"
+	"math/rand"
 	"strings"
 
 	"github.com/mitchellh/mapstructure"
@@ -18,6 +19,7 @@ const (
 type Stratego struct {
 	state   *state
 	actions []*bg.BoardGameAction
+	options *StrategoMoreOptions
 }
 
 func NewStratego(options *bg.BoardGameOptions) (*Stratego, error) {
@@ -31,9 +33,28 @@ func NewStratego(options *bg.BoardGameOptions) (*Stratego, error) {
 			Err:    fmt.Errorf("at most %d teams allowed to create a game of %s", maxTeams, key),
 			Status: bgerr.StatusTooManyTeams,
 		}
+	} else if duplicates(options.Teams) {
+		return nil, &bgerr.Error{
+			Err:    fmt.Errorf("duplicate teams found"),
+			Status: bgerr.StatusInvalidOption,
+		}
+	}
+	var details StrategoMoreOptions
+	if err := mapstructure.Decode(options.MoreOptions, &details); err != nil {
+		return nil, &bgerr.Error{
+			Err:    err,
+			Status: bgerr.StatusInvalidOption,
+		}
+	}
+	state, err := newState(options.Teams, rand.New(rand.NewSource(details.Seed)))
+	if err != nil {
+		return nil, &bgerr.Error{
+			Err:    err,
+			Status: bgerr.StatusInvalidOption,
+		}
 	}
 	return &Stratego{
-		state:   newState(options.Teams),
+		state:   state,
 		actions: make([]*bg.BoardGameAction, 0),
 	}, nil
 }
@@ -112,6 +133,7 @@ func (s *Stratego) GetBGN() *bgn.Game {
 	tags := map[string]string{
 		"Game":  key,
 		"Teams": strings.Join(s.state.teams, ", "),
+		"Seed":  fmt.Sprintf("%d", s.options.Seed),
 	}
 	actions := make([]bgn.Action, 0)
 	for _, action := range s.actions {

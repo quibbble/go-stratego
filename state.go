@@ -3,6 +3,7 @@ package go_stratego
 import (
 	"fmt"
 	"math"
+	"math/rand"
 
 	bg "github.com/quibbble/go-boardgame"
 	"github.com/quibbble/go-boardgame/pkg/bgerr"
@@ -15,14 +16,20 @@ type state struct {
 	board   *Board
 }
 
-func newState(teams []string) *state {
-	board, _ := NewRandomBoard(teams)
+func newState(teams []string, random *rand.Rand) (*state, error) {
+	if random == nil {
+		return nil, fmt.Errorf("random seed is null")
+	}
+	board, err := NewRandomBoard(teams, random)
+	if err != nil {
+		return nil, err
+	}
 	return &state{
 		board:   board,
 		teams:   teams,
 		turn:    teams[0],
 		winners: make([]string, 0),
-	}
+	}, nil
 }
 
 func (s *state) MoveUnit(team string, unitRow, unitCol, moveRow, moveCol int) (*BattleActionDetails, error) {

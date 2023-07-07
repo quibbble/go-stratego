@@ -65,7 +65,7 @@ func (b *Board) numActive(team string) int {
 	return count
 }
 
-func NewRandomBoard(teams []string) (*Board, error) {
+func NewRandomBoard(teams []string, random *rand.Rand) (*Board, error) {
 	if len(teams) != 2 {
 		return nil, fmt.Errorf("teams list must contain two teams")
 	}
@@ -85,8 +85,8 @@ func NewRandomBoard(teams []string) (*Board, error) {
 		wr.Choice{Item: 1, Weight: 4},
 		wr.Choice{Item: 0, Weight: 5},
 	)
-	place(board, flagChooser, true, NewUnit("flag", teams[0]))
-	place(board, flagChooser, false, NewUnit("flag", teams[1]))
+	place(board, flagChooser, random, true, NewUnit("flag", teams[0]))
+	place(board, flagChooser, random, false, NewUnit("flag", teams[1]))
 	teamOneUnits["flag"] -= 1
 	teamTwoUnits["flag"] -= 1
 
@@ -98,8 +98,8 @@ func NewRandomBoard(teams []string) (*Board, error) {
 		wr.Choice{Item: 0, Weight: 4},
 	)
 	for i := 0; i < 6; i++ {
-		place(board, bombChooser, true, NewUnit("bomb", teams[0]))
-		place(board, bombChooser, false, NewUnit("bomb", teams[1]))
+		place(board, bombChooser, random, true, NewUnit("bomb", teams[0]))
+		place(board, bombChooser, random, false, NewUnit("bomb", teams[1]))
 		teamOneUnits["bomb"] -= 1
 		teamTwoUnits["bomb"] -= 1
 	}
@@ -111,8 +111,8 @@ func NewRandomBoard(teams []string) (*Board, error) {
 		wr.Choice{Item: 0, Weight: 5},
 	)
 	for i := 0; i < 5; i++ {
-		place(board, minerChooser, true, NewUnit("miner", teams[0]))
-		place(board, minerChooser, false, NewUnit("miner", teams[1]))
+		place(board, minerChooser, random, true, NewUnit("miner", teams[0]))
+		place(board, minerChooser, random, false, NewUnit("miner", teams[1]))
 		teamOneUnits["miner"] -= 1
 		teamTwoUnits["miner"] -= 1
 	}
@@ -124,8 +124,8 @@ func NewRandomBoard(teams []string) (*Board, error) {
 		wr.Choice{Item: 1, Weight: 1},
 	)
 	for i := 0; i < 6; i++ {
-		place(board, scoutChooser, true, NewUnit("scout", teams[0]))
-		place(board, scoutChooser, false, NewUnit("scout", teams[1]))
+		place(board, scoutChooser, random, true, NewUnit("scout", teams[0]))
+		place(board, scoutChooser, random, false, NewUnit("scout", teams[1]))
 		teamOneUnits["scout"] -= 1
 		teamTwoUnits["scout"] -= 1
 	}
@@ -160,19 +160,19 @@ func NewRandomBoard(teams []string) (*Board, error) {
 	return board, nil
 }
 
-func getRandomNotTaken(board *Board, chooser *wr.Chooser, isOne bool) (int, int) {
-	row := chooser.Pick().(int)
+func getRandomNotTaken(board *Board, chooser *wr.Chooser, random *rand.Rand, isOne bool) (int, int) {
+	row := chooser.PickSource(random).(int)
 	col := rand.Intn(BoardSize)
 	if !isOne {
 		row = BoardSize - row - 1
 	}
 	if board.board[row][col] != nil {
-		return getRandomNotTaken(board, chooser, isOne)
+		return getRandomNotTaken(board, chooser, random, isOne)
 	}
 	return row, col
 }
 
-func place(board *Board, chooser *wr.Chooser, isOne bool, unit *Unit) {
-	row, col := getRandomNotTaken(board, chooser, isOne)
+func place(board *Board, chooser *wr.Chooser, random *rand.Rand, isOne bool, unit *Unit) {
+	row, col := getRandomNotTaken(board, chooser, random, isOne)
 	board.board[row][col] = unit
 }

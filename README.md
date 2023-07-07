@@ -4,7 +4,7 @@ Go-stratego is a [Go](https://golang.org) implementation of the board game [Stra
 
 ## Usage
 
-To play a game create a new Connect4 instance:
+To play a game create a new Stratego instance:
 ```go
 builder := Builder{}
 game, err := builder.Create(&bg.BoardGameOptions{

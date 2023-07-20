@@ -265,5 +265,8 @@ func (s *state) targets() []*bg.BoardGameAction {
 
 func (s *state) message() string {
 	message := fmt.Sprintf("%s must move a unit", s.turn)
+	if len(s.winners) > 0 {
+		message = fmt.Sprintf("%s wins", s.winners[0])
+	}
 	return message
 }

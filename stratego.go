@@ -67,6 +67,18 @@ func (s *Stratego) Do(action *bg.BoardGameAction) error {
 		}
 	}
 	switch action.ActionType {
+	case ActionSwitchUnits:
+		var details SwitchUnitsActionDetails
+		if err := mapstructure.Decode(action.MoreDetails, &details); err != nil {
+			return &bgerr.Error{
+				Err:    err,
+				Status: bgerr.StatusInvalidActionDetails,
+			}
+		}
+		if err := s.state.SwitchUnits(action.Team, details.UnitRow, details.UnitColumn, details.SwitchUnitRow, details.SwitchUnitColumn); err != nil {
+			return err
+		}
+		s.actions = append(s.actions, action)
 	case ActionMoveUnit:
 		var details MoveUnitActionDetails
 		if err := mapstructure.Decode(action.MoreDetails, &details); err != nil {
@@ -79,11 +91,14 @@ func (s *Stratego) Do(action *bg.BoardGameAction) error {
 		if err != nil {
 			return err
 		}
-		s.actions = append(s.actions, action, &bg.BoardGameAction{
-			Team:        action.Team,
-			ActionType:  ActionBattle,
-			MoreDetails: battle,
-		})
+		s.actions = append(s.actions, action)
+		if battle != nil {
+			s.actions = append(s.actions, &bg.BoardGameAction{
+				Team:        action.Team,
+				ActionType:  ActionBattle,
+				MoreDetails: battle,
+			})
+		}
 	case ActionBattle:
 		// do nothing - this is here so BGN processing does not fail
 	case bg.ActionSetWinners:
@@ -119,13 +134,24 @@ func (s *Stratego) GetSnapshot(team ...string) (*bg.BoardGameSnapshot, error) {
 		targets = s.state.targets()
 	}
 
+	// reveals the winning unit from the last battle to both teams
+	revealRow := -1
+	revealCol := -1
+	if len(s.actions) > 1 && s.actions[len(s.actions)-1].ActionType == ActionBattle {
+		action := s.actions[len(s.actions)-2] // retrieve the move action just before battle
+		var details MoveUnitActionDetails
+		_ = mapstructure.Decode(action.MoreDetails, &details)
+		revealRow = details.MoveRow
+		revealCol = details.MoveColumn
+	}
+
 	board := [BoardSize][BoardSize]*Unit{}
 	for r, row := range s.state.board.board {
 		for c, unit := range row {
 			if unit != nil {
 				if unit.Team != nil {
 					if len(team) == 1 {
-						if *unit.Team == team[0] {
+						if *unit.Team == team[0] || revealRow == r && revealCol == c {
 							board[r][c] = NewUnit(unit.Type, *unit.Team)
 						} else {
 							board[r][c] = NewUnit("", *unit.Team)
@@ -145,7 +171,8 @@ func (s *Stratego) GetSnapshot(team ...string) (*bg.BoardGameSnapshot, error) {
 		Teams:   s.state.teams,
 		Winners: s.state.winners,
 		MoreData: StategoSnapshotData{
-			Board: board,
+			Board:   board,
+			Started: s.state.started,
 		},
 		Targets: targets,
 		Actions: s.actions,
@@ -166,6 +193,10 @@ func (s *Stratego) GetBGN() *bgn.Game {
 			ActionKey: rune(actionToNotation[action.ActionType][0]),
 		}
 		switch action.ActionType {
+		case ActionSwitchUnits:
+			var details SwitchUnitsActionDetails
+			_ = mapstructure.Decode(action.MoreDetails, &details)
+			bgnAction.Details = details.encodeBGN()
 		case ActionMoveUnit:
 			var details MoveUnitActionDetails
 			_ = mapstructure.Decode(action.MoreDetails, &details)

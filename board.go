@@ -53,7 +53,7 @@ func (b *Board) numActive(team string) int {
 	count := 0
 	for _, row := range b.board {
 		for _, unit := range row {
-			if unit != nil && *unit.Team == team && unit.Type != "bomb" && unit.Type != "flag" {
+			if unit != nil && unit.Team != nil && *unit.Team == team && unit.Type != "bomb" && unit.Type != "flag" {
 				count += 1
 			}
 		}

@@ -14,6 +14,7 @@ type state struct {
 	teams   []string
 	winners []string
 	board   *Board
+	started bool
 }
 
 func newState(teams []string, random *rand.Rand) (*state, error) {
@@ -32,7 +33,47 @@ func newState(teams []string, random *rand.Rand) (*state, error) {
 	}, nil
 }
 
+func (s *state) SwitchUnits(team string, unitRow, unitCol, switchUnitRow, switchUnitCol int) error {
+	if s.started {
+		return &bgerr.Error{
+			Err:    fmt.Errorf("cannot switch units when game has already started"),
+			Status: bgerr.StatusWrongTurn,
+		}
+	}
+	if unitRow >= BoardSize || unitRow < 0 || unitCol >= BoardSize || unitCol < 0 ||
+		switchUnitRow >= BoardSize || switchUnitRow < 0 || switchUnitCol >= BoardSize || switchUnitCol < 0 {
+		return &bgerr.Error{
+			Err:    fmt.Errorf("index out of bounds"),
+			Status: bgerr.StatusInvalidAction,
+		}
+	}
+	unit := s.board.board[unitRow][unitCol]
+	switchUnit := s.board.board[switchUnitRow][switchUnitCol]
+	if unit.Team == nil || switchUnit.Team == nil {
+		return &bgerr.Error{
+			Err:    fmt.Errorf("cannot switch units that have no team"),
+			Status: bgerr.StatusInvalidAction,
+		}
+	}
+	if *unit.Team != *switchUnit.Team {
+		return &bgerr.Error{
+			Err:    fmt.Errorf("cannot switch units that are not on the same team"),
+			Status: bgerr.StatusInvalidAction,
+		}
+	}
+	if *unit.Team != team {
+		return &bgerr.Error{
+			Err:    fmt.Errorf("cannot switch the opposing team's units"),
+			Status: bgerr.StatusInvalidAction,
+		}
+	}
+	s.board.board[unitRow][unitCol] = switchUnit
+	s.board.board[switchUnitRow][switchUnitCol] = unit
+	return nil
+}
+
 func (s *state) MoveUnit(team string, unitRow, unitCol, moveRow, moveCol int) (*BattleActionDetails, error) {
+	s.started = true
 	if team != s.turn {
 		return nil, &bgerr.Error{
 			Err:    fmt.Errorf("%s cannot play on %s turn", team, s.turn),
@@ -114,9 +155,9 @@ func (s *state) MoveUnit(team string, unitRow, unitCol, moveRow, moveCol int) (*
 		}
 		s.nextTurn()
 		return &BattleActionDetails{
-			AttackingUnit: *unit.Team,
-			AttackedUnit:  *attackedUnit.Team,
-			Winner:        winner,
+			AttackingUnit: *unit,
+			AttackedUnit:  *attackedUnit,
+			WinningTeam:   winner,
 		}, nil
 	} else {
 		s.board.board[unitRow][unitCol] = nil

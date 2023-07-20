@@ -56,6 +56,12 @@ func (b *Builder) Load(game *bgn.Game) (bg.BoardGameWithBGN, error) {
 		}
 		var details interface{}
 		switch actionType {
+		case ActionSwitchUnits:
+			result, err := decodeSwitchUnitsActionDetailsBGN(action.Details)
+			if err != nil {
+				return nil, err
+			}
+			details = result
 		case ActionMoveUnit:
 			result, err := decodeMoveUnitActionDetailsBGN(action.Details)
 			if err != nil {
@@ -63,7 +69,7 @@ func (b *Builder) Load(game *bgn.Game) (bg.BoardGameWithBGN, error) {
 			}
 			details = result
 		case ActionBattle:
-			result, err := decodeBattleActionDetailsBGN(action.Details)
+			result, err := decodeBattleActionDetailsBGN(teams, action.Details)
 			if err != nil {
 				return nil, err
 			}

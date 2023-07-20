@@ -4,8 +4,9 @@ const BoardSize = 10
 
 // Action types
 const (
-	ActionMoveUnit = "MoveUnit"
-	ActionBattle   = "Battle"
+	ActionSwitchUnits = "SwitchUnits"
+	ActionMoveUnit    = "MoveUnit"
+	ActionBattle      = "Battle"
 )
 
 // StrategoMoreOptions are the additional options for creating a game of Stratego
@@ -15,7 +16,13 @@ type StrategoMoreOptions struct {
 
 // StategoSnapshotData is the game data unique to Statego
 type StategoSnapshotData struct {
-	Board [BoardSize][BoardSize]*Unit
+	Board   [BoardSize][BoardSize]*Unit
+	Started bool
+}
+
+type SwitchUnitsActionDetails struct {
+	UnitRow, UnitColumn             int
+	SwitchUnitRow, SwitchUnitColumn int
 }
 
 type MoveUnitActionDetails struct {
@@ -24,5 +31,6 @@ type MoveUnitActionDetails struct {
 }
 
 type BattleActionDetails struct {
-	AttackingUnit, AttackedUnit, Winner string
+	AttackingUnit, AttackedUnit Unit
+	WinningTeam                 string
 }

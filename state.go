@@ -73,7 +73,6 @@ func (s *state) SwitchUnits(team string, unitRow, unitCol, switchUnitRow, switch
 }
 
 func (s *state) MoveUnit(team string, unitRow, unitCol, moveRow, moveCol int) (*BattleActionDetails, error) {
-	s.started = true
 	if team != s.turn {
 		return nil, &bgerr.Error{
 			Err:    fmt.Errorf("%s cannot play on %s turn", team, s.turn),
@@ -155,6 +154,7 @@ func (s *state) MoveUnit(team string, unitRow, unitCol, moveRow, moveCol int) (*
 			s.winners = []string{*attackedUnit.Team} // the other team ran out of movable units
 		}
 		s.nextTurn()
+		s.started = true
 		return &BattleActionDetails{
 			AttackingUnit: *unit,
 			AttackedUnit:  *attackedUnit,
@@ -164,6 +164,7 @@ func (s *state) MoveUnit(team string, unitRow, unitCol, moveRow, moveCol int) (*
 		s.board.board[unitRow][unitCol] = nil
 		s.board.board[moveRow][moveCol] = unit
 		s.nextTurn()
+		s.started = true
 		return nil, nil
 	}
 }

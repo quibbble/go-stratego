@@ -106,7 +106,8 @@ func (s *state) MoveUnit(team string, unitRow, unitCol, moveRow, moveCol int) (*
 			Status: bgerr.StatusInvalidAction,
 		}
 	}
-	if math.Abs(float64(moveRow)-float64(unitRow))+math.Abs(float64(moveCol)-float64(unitCol)) > 1.0 {
+	if (unit.Type != "scout" && math.Abs(float64(moveRow)-float64(unitRow))+math.Abs(float64(moveCol)-float64(unitCol)) > 1.0) ||
+		(unit.Type == "scout" && math.Abs(float64(moveRow)-float64(unitRow)) > 1.0 && math.Abs(float64(moveCol)-float64(unitCol)) > 1.0) {
 		return nil, &bgerr.Error{
 			Err:    fmt.Errorf("unit cannot move diagonally"),
 			Status: bgerr.StatusInvalidAction,

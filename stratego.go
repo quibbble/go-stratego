@@ -151,7 +151,7 @@ func (s *Stratego) GetSnapshot(team ...string) (*bg.BoardGameSnapshot, error) {
 			if unit != nil {
 				if unit.Team != nil {
 					if len(team) == 1 {
-						if *unit.Team == team[0] || revealRow == r && revealCol == c {
+						if *unit.Team == team[0] || revealRow == r && revealCol == c || len(s.state.winners) > 0 {
 							board[r][c] = NewUnit(unit.Type, *unit.Team)
 						} else {
 							board[r][c] = NewUnit("", *unit.Team)

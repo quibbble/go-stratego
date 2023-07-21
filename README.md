@@ -12,6 +12,20 @@ game, err := builder.Create(&bg.BoardGameOptions{
 })
 ```
 
+To reoganize your board and switch units before the game starts do the following action:
+```go
+err := game.Do(&bg.BoardGameAction{
+    Team: "TeamA",
+    ActionType: "SwitchUnits",
+    MoreDetails: SwitchUnitsActionDetails{
+        UnitRow: 0,
+        UnitColumn: 0,
+        SwitchUnitRow: 1,
+        SwitchUnitColumn: 0,
+    },
+})
+```
+
 To move a unit do the following action:
 ```go
 err := game.Do(&bg.BoardGameAction{

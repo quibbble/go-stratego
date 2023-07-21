@@ -55,6 +55,7 @@ func NewStratego(options *bg.BoardGameOptions) (*Stratego, error) {
 	}
 	return &Stratego{
 		state:   state,
+		options: &details,
 		actions: make([]*bg.BoardGameAction, 0),
 	}, nil
 }

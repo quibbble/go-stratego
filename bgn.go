@@ -99,7 +99,7 @@ func decodeMoveUnitActionDetailsBGN(notation []string) (*MoveUnitActionDetails, 
 func (b *BattleActionDetails) encodeBGN(teams []string) []string {
 	attacking := fmt.Sprintf("%d:%s", indexOf(teams, *b.AttackingUnit.Team), unitTypeToNotation[b.AttackingUnit.Type])
 	attacked := fmt.Sprintf("%d:%s", indexOf(teams, *b.AttackedUnit.Team), unitTypeToNotation[b.AttackedUnit.Type])
-	return []string{attacking, attacked, b.WinningTeam}
+	return []string{attacking, attacked, strconv.Itoa(indexOf(teams, b.WinningTeam))}
 }
 
 func decodeBattleActionDetailsBGN(teams []string, notation []string) (*BattleActionDetails, error) {
@@ -124,10 +124,18 @@ func decodeBattleActionDetailsBGN(teams []string, notation []string) (*BattleAct
 	if attackingType == "" || attackedType == "" {
 		return nil, loadFailure(fmt.Errorf("invalid battle notation"))
 	}
+	winningIndex, err := strconv.Atoi(notation[2])
+	if err != nil || winningIndex < -1 || winningIndex >= len(teams) {
+		return nil, loadFailure(fmt.Errorf("invalid battle notation"))
+	}
+	winningTeam := ""
+	if winningIndex >= 0 {
+		winningTeam = teams[winningIndex]
+	}
 	return &BattleActionDetails{
 		AttackingUnit: *NewUnit(teams[attackingIndex], attackingType),
 		AttackedUnit:  *NewUnit(teams[attackedIndex], attackedType),
-		WinningTeam:   notation[2],
+		WinningTeam:   winningTeam,
 	}, nil
 }
 

@@ -204,7 +204,7 @@ func (s *Stratego) GetBGN() *bgn.Game {
 		case ActionBattle:
 			var details BattleActionDetails
 			_ = mapstructure.Decode(action.MoreDetails, &details)
-			bgnAction.Details = details.encodeBGN()
+			bgnAction.Details = details.encodeBGN(s.state.teams)
 		case bg.ActionSetWinners:
 			var details bg.SetWinnersActionDetails
 			_ = mapstructure.Decode(action.MoreDetails, &details)

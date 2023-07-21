@@ -99,27 +99,27 @@ func (s *state) MoveUnit(team string, unitRow, unitCol, moveRow, moveCol int) (*
 			Status: bgerr.StatusInvalidAction,
 		}
 	}
-	if unit.Type == "bomb" || unit.Type == "flag" {
+	if unit.Type == bomb || unit.Type == flag {
 		return nil, &bgerr.Error{
 			Err:    fmt.Errorf("cannot move bombs or flags"),
 			Status: bgerr.StatusInvalidAction,
 		}
 	}
-	if (unit.Type != "scout" && math.Abs(float64(moveRow)-float64(unitRow))+math.Abs(float64(moveCol)-float64(unitCol)) > 1.0) ||
-		(unit.Type == "scout" && math.Abs(float64(moveRow)-float64(unitRow)) > 1.0 && math.Abs(float64(moveCol)-float64(unitCol)) > 1.0) {
+	if (unit.Type != scout && math.Abs(float64(moveRow)-float64(unitRow))+math.Abs(float64(moveCol)-float64(unitCol)) > 1.0) ||
+		(unit.Type == scout && math.Abs(float64(moveRow)-float64(unitRow)) > 1.0 && math.Abs(float64(moveCol)-float64(unitCol)) > 1.0) {
 		return nil, &bgerr.Error{
 			Err:    fmt.Errorf("unit cannot move diagonally"),
 			Status: bgerr.StatusInvalidAction,
 		}
 	}
-	if (math.Abs(float64(moveRow)-float64(unitRow)) > 1.0 && unit.Type != "scout") ||
-		(math.Abs(float64(moveCol)-float64(unitCol)) > 1.0 && unit.Type != "scout") {
+	if (math.Abs(float64(moveRow)-float64(unitRow)) > 1.0 && unit.Type != scout) ||
+		(math.Abs(float64(moveCol)-float64(unitCol)) > 1.0 && unit.Type != scout) {
 		return nil, &bgerr.Error{
 			Err:    fmt.Errorf("unit cannot move more than one space unless they are a scout"),
 			Status: bgerr.StatusInvalidAction,
 		}
 	}
-	if unit.Type == "scout" && !scoutCanMove(s.board, unitRow, unitCol, moveRow, moveCol, *unit.Team) {
+	if unit.Type == scout && !scoutCanMove(s.board, unitRow, unitCol, moveRow, moveCol, *unit.Team) {
 		return nil, &bgerr.Error{
 			Err:    fmt.Errorf("scout cannot move through water or other units"),
 			Status: bgerr.StatusInvalidAction,
@@ -127,7 +127,7 @@ func (s *state) MoveUnit(team string, unitRow, unitCol, moveRow, moveCol int) (*
 	}
 	attackedUnit := s.board.board[moveRow][moveCol]
 	if attackedUnit != nil {
-		if attackedUnit.Type == "water" {
+		if attackedUnit.Type == water {
 			return nil, &bgerr.Error{
 				Err:    fmt.Errorf("cannot move onto water"),
 				Status: bgerr.StatusInvalidAction,
@@ -144,7 +144,7 @@ func (s *state) MoveUnit(team string, unitRow, unitCol, moveRow, moveCol int) (*
 			winner = *winningUnit.Team
 		}
 		// check for game over
-		if attackedUnit.Type == "flag" {
+		if attackedUnit.Type == flag {
 			s.winners = []string{team} // attacked flag so game is over
 		} else if s.board.numActive(*attackedUnit.Team) == 0 && s.board.numActive(team) == 0 {
 			s.winners = []string{""} // both teams ran out of movable units

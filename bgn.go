@@ -9,8 +9,27 @@ import (
 )
 
 var (
-	actionToNotation = map[string]string{ActionMoveUnit: "m", ActionBattle: "b"}
-	notationToAction = reverseMap(actionToNotation)
+	actionToNotation = map[string]string{
+		ActionSwitchUnits: "s",
+		ActionMoveUnit:    "m",
+		ActionBattle:      "b",
+	}
+	notationToAction   = reverseMap(actionToNotation)
+	unitTypeToNotation = map[string]string{
+		flag:       "f",
+		bomb:       "b",
+		spy:        "s",
+		scout:      "1",
+		miner:      "2",
+		sergeant:   "3",
+		lieutenant: "4",
+		captain:    "5",
+		major:      "6",
+		colonel:    "7",
+		general:    "8",
+		marshal:    "9",
+	}
+	notationToUnitType = reverseMap(unitTypeToNotation)
 )
 
 func (s *SwitchUnitsActionDetails) encodeBGN() []string {
@@ -77,9 +96,9 @@ func decodeMoveUnitActionDetailsBGN(notation []string) (*MoveUnitActionDetails, 
 	}, nil
 }
 
-func (b *BattleActionDetails) encodeBGN() []string {
-	attacking := fmt.Sprintf("%s:%s", *b.AttackingUnit.Team, b.AttackingUnit.Type)
-	attacked := fmt.Sprintf("%s:%s", *b.AttackedUnit.Team, b.AttackedUnit.Type)
+func (b *BattleActionDetails) encodeBGN(teams []string) []string {
+	attacking := fmt.Sprintf("%d:%s", indexOf(teams, *b.AttackingUnit.Team), unitTypeToNotation[b.AttackingUnit.Type])
+	attacked := fmt.Sprintf("%d:%s", indexOf(teams, *b.AttackedUnit.Team), unitTypeToNotation[b.AttackedUnit.Type])
 	return []string{attacking, attacked, b.WinningTeam}
 }
 
@@ -89,14 +108,25 @@ func decodeBattleActionDetailsBGN(teams []string, notation []string) (*BattleAct
 	}
 	attacking := strings.Split(notation[0], ":")
 	attacked := strings.Split(notation[1], ":")
-	if len(attacking) != 2 || len(attacked) != 2 ||
-		!contains(teams, attacking[0]) || !contains(teams, attacked[0]) ||
-		!contains(UnitTyes, attacking[1]) || !contains(UnitTyes, attacked[1]) {
+	if len(attacking) != 2 || len(attacked) != 2 {
+		return nil, loadFailure(fmt.Errorf("invalid battle notation"))
+	}
+	attackingIndex, err := strconv.Atoi(attacking[0])
+	if err != nil || attackingIndex < 0 || attackingIndex >= len(teams) {
+		return nil, loadFailure(fmt.Errorf("invalid battle notation"))
+	}
+	attackedIndex, err := strconv.Atoi(attacked[0])
+	if err != nil || attackedIndex < 0 || attackedIndex >= len(teams) {
+		return nil, loadFailure(fmt.Errorf("invalid battle notation"))
+	}
+	attackingType := notationToUnitType[attacking[1]]
+	attackedType := notationToUnitType[attacked[1]]
+	if attackingType == "" || attackedType == "" {
 		return nil, loadFailure(fmt.Errorf("invalid battle notation"))
 	}
 	return &BattleActionDetails{
-		AttackingUnit: *NewUnit(attacking[0], attacking[1]),
-		AttackedUnit:  *NewUnit(attacked[0], attacked[1]),
+		AttackingUnit: *NewUnit(teams[attackingIndex], attackingType),
+		AttackedUnit:  *NewUnit(teams[attackedIndex], attackedType),
 		WinningTeam:   notation[2],
 	}, nil
 }

@@ -1,10 +1,10 @@
 # Go-stratego
 
-Go-stratego is a [Go](https://golang.org) implementation of the board game [Stratego](https://en.wikipedia.org/wiki/Stratego). Please note that this repo only includes game logic and a basic API to interact with the game but does NOT include any form of GUI.
+Go-stratego is a [Go](https://golang.org) implementation of the board game [Stratego](https://en.wikipedia.org/wiki/Stratego).
 
-Check out [stratego.quibbble.com](stratego.quibbble.com) if you wish to view and play a live version of this game which utilizes this project along with a separate custom UI.
+Check out [stratego.quibbble.com](https://stratego.quibbble.com) to play a live version of this game. This website utilizes [stratego](https://github.com/quibbble/stratego) frontend code, [go-stratego](https://github.com/quibbble/go-stratego) game logic, and [go-quibbble](https://github.com/quibbble/go-quibbble) server logic.
 
-[![Quibbble Stratego](https://i.imgur.com/iekrcod.png)](stratego.quibbble.com)
+[![Quibbble Stratego](https://raw.githubusercontent.com/quibbble/stratego/main/screenshot.png)](https://stratego.quibbble.com)
 
 ## Usage
 

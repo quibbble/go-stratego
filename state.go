@@ -14,6 +14,7 @@ type state struct {
 	teams   []string
 	winners []string
 	board   *Board
+	battle  *Battle
 	started bool
 }
 
@@ -72,55 +73,55 @@ func (s *state) SwitchUnits(team string, unitRow, unitCol, switchUnitRow, switch
 	return nil
 }
 
-func (s *state) MoveUnit(team string, unitRow, unitCol, moveRow, moveCol int) (*BattleActionDetails, error) {
+func (s *state) MoveUnit(team string, unitRow, unitCol, moveRow, moveCol int) error {
 	if team != s.turn {
-		return nil, &bgerr.Error{
+		return &bgerr.Error{
 			Err:    fmt.Errorf("%s cannot play on %s turn", team, s.turn),
 			Status: bgerr.StatusWrongTurn,
 		}
 	}
 	if unitRow >= BoardSize || unitRow < 0 || unitCol >= BoardSize || unitCol < 0 ||
 		moveRow >= BoardSize || moveRow < 0 || moveCol >= BoardSize || moveCol < 0 {
-		return nil, &bgerr.Error{
+		return &bgerr.Error{
 			Err:    fmt.Errorf("index out of bounds"),
 			Status: bgerr.StatusInvalidAction,
 		}
 	}
 	unit := s.board.board[unitRow][unitCol]
 	if unit == nil {
-		return nil, &bgerr.Error{
+		return &bgerr.Error{
 			Err:    fmt.Errorf("unit does not exist at %d, %d", unitRow, unitCol),
 			Status: bgerr.StatusInvalidAction,
 		}
 	}
 	if *unit.Team != team {
-		return nil, &bgerr.Error{
+		return &bgerr.Error{
 			Err:    fmt.Errorf("cannot move a unit not part of your team"),
 			Status: bgerr.StatusInvalidAction,
 		}
 	}
 	if unit.Type == bomb || unit.Type == flag {
-		return nil, &bgerr.Error{
+		return &bgerr.Error{
 			Err:    fmt.Errorf("cannot move bombs or flags"),
 			Status: bgerr.StatusInvalidAction,
 		}
 	}
 	if (unit.Type != scout && math.Abs(float64(moveRow)-float64(unitRow))+math.Abs(float64(moveCol)-float64(unitCol)) > 1.0) ||
 		(unit.Type == scout && math.Abs(float64(moveRow)-float64(unitRow)) > 1.0 && math.Abs(float64(moveCol)-float64(unitCol)) > 1.0) {
-		return nil, &bgerr.Error{
+		return &bgerr.Error{
 			Err:    fmt.Errorf("unit cannot move diagonally"),
 			Status: bgerr.StatusInvalidAction,
 		}
 	}
 	if (math.Abs(float64(moveRow)-float64(unitRow)) > 1.0 && unit.Type != scout) ||
 		(math.Abs(float64(moveCol)-float64(unitCol)) > 1.0 && unit.Type != scout) {
-		return nil, &bgerr.Error{
+		return &bgerr.Error{
 			Err:    fmt.Errorf("unit cannot move more than one space unless they are a scout"),
 			Status: bgerr.StatusInvalidAction,
 		}
 	}
 	if unit.Type == scout && !scoutCanMove(s.board, unitRow, unitCol, moveRow, moveCol, *unit.Team) {
-		return nil, &bgerr.Error{
+		return &bgerr.Error{
 			Err:    fmt.Errorf("scout cannot move through water or other units"),
 			Status: bgerr.StatusInvalidAction,
 		}
@@ -128,14 +129,14 @@ func (s *state) MoveUnit(team string, unitRow, unitCol, moveRow, moveCol int) (*
 	attackedUnit := s.board.board[moveRow][moveCol]
 	if attackedUnit != nil {
 		if attackedUnit.Type == water {
-			return nil, &bgerr.Error{
+			return &bgerr.Error{
 				Err:    fmt.Errorf("cannot move onto water"),
 				Status: bgerr.StatusInvalidAction,
 			}
 		}
 		winningUnit, err := unit.Attack(attackedUnit)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		s.board.board[unitRow][unitCol] = nil
 		s.board.board[moveRow][moveCol] = winningUnit
@@ -155,17 +156,21 @@ func (s *state) MoveUnit(team string, unitRow, unitCol, moveRow, moveCol int) (*
 		}
 		s.nextTurn()
 		s.started = true
-		return &BattleActionDetails{
+		s.battle = &Battle{
+			MoveUnitActionDetails: MoveUnitActionDetails{
+				unitRow, unitCol, moveRow, moveCol,
+			},
 			AttackingUnit: *unit,
 			AttackedUnit:  *attackedUnit,
 			WinningTeam:   winner,
-		}, nil
+		}
+		return nil
 	} else {
 		s.board.board[unitRow][unitCol] = nil
 		s.board.board[moveRow][moveCol] = unit
 		s.nextTurn()
 		s.started = true
-		return nil, nil
+		return nil
 	}
 }
 

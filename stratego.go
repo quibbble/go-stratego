@@ -88,20 +88,11 @@ func (s *Stratego) Do(action *bg.BoardGameAction) error {
 				Status: bgerr.StatusInvalidActionDetails,
 			}
 		}
-		battle, err := s.state.MoveUnit(action.Team, details.UnitRow, details.UnitColumn, details.MoveRow, details.MoveColumn)
+		err := s.state.MoveUnit(action.Team, details.UnitRow, details.UnitColumn, details.MoveRow, details.MoveColumn)
 		if err != nil {
 			return err
 		}
 		s.actions = append(s.actions, action)
-		if battle != nil {
-			s.actions = append(s.actions, &bg.BoardGameAction{
-				Team:        action.Team,
-				ActionType:  ActionBattle,
-				MoreDetails: battle,
-			})
-		}
-	case ActionBattle:
-		// do nothing - this is here so BGN processing does not fail
 	case bg.ActionSetWinners:
 		var details bg.SetWinnersActionDetails
 		if err := mapstructure.Decode(action.MoreDetails, &details); err != nil {
@@ -138,12 +129,9 @@ func (s *Stratego) GetSnapshot(team ...string) (*bg.BoardGameSnapshot, error) {
 	// reveals the winning unit from the last battle to both teams
 	revealRow := -1
 	revealCol := -1
-	if len(s.actions) > 1 && s.actions[len(s.actions)-1].ActionType == ActionBattle {
-		action := s.actions[len(s.actions)-2] // retrieve the move action just before battle
-		var details MoveUnitActionDetails
-		_ = mapstructure.Decode(action.MoreDetails, &details)
-		revealRow = details.MoveRow
-		revealCol = details.MoveColumn
+	if s.state.battle != nil {
+		revealRow = s.state.battle.MoveRow
+		revealCol = s.state.battle.MoveColumn
 	}
 
 	board := [BoardSize][BoardSize]*Unit{}
@@ -173,6 +161,7 @@ func (s *Stratego) GetSnapshot(team ...string) (*bg.BoardGameSnapshot, error) {
 		Winners: s.state.winners,
 		MoreData: StategoSnapshotData{
 			Board:   board,
+			Battle:  s.state.battle,
 			Started: s.state.started,
 		},
 		Targets: targets,
@@ -202,10 +191,6 @@ func (s *Stratego) GetBGN() *bgn.Game {
 			var details MoveUnitActionDetails
 			_ = mapstructure.Decode(action.MoreDetails, &details)
 			bgnAction.Details = details.encodeBGN()
-		case ActionBattle:
-			var details BattleActionDetails
-			_ = mapstructure.Decode(action.MoreDetails, &details)
-			bgnAction.Details = details.encodeBGN(s.state.teams)
 		case bg.ActionSetWinners:
 			var details bg.SetWinnersActionDetails
 			_ = mapstructure.Decode(action.MoreDetails, &details)

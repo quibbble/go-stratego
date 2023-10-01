@@ -65,13 +65,21 @@ func NewRandomBoard(teams []string, random *rand.Rand) (*Board, error) {
 	if len(teams) != 2 {
 		return nil, fmt.Errorf("teams list must contain two teams")
 	}
-	teamOneUnits := map[string]int{
-		flag: 1, bomb: 6, spy: 1, scout: 8, miner: 5, sergeant: 4, lieutenant: 4,
-		captain: 4, major: 3, colonel: 2, general: 1, marshal: 1,
+	unitToIdx := map[string]int{
+		flag: 0, bomb: 1, spy: 2, scout: 3, miner: 4, sergeant: 5,
+		lieutenant: 6, captain: 7, major: 8, colonel: 9, general: 10, marshal: 11,
 	}
-	teamTwoUnits := map[string]int{
-		flag: 1, bomb: 6, spy: 1, scout: 8, miner: 5, sergeant: 4, lieutenant: 4,
-		captain: 4, major: 3, colonel: 2, general: 1, marshal: 1,
+	idxToUnit := map[int]string{
+		0: flag, 1: bomb, 2: spy, 3: scout, 4: miner, 5: sergeant,
+		6: lieutenant, 7: captain, 8: major, 9: colonel, 10: general, 11: marshal,
+	}
+	teamOneUnits := [12]int{
+		1, 6, 1, 8, 5, 4,
+		4, 4, 3, 2, 1, 1,
+	}
+	teamTwoUnits := [12]int{
+		1, 6, 1, 8, 5, 4,
+		4, 4, 3, 2, 1, 1,
 	}
 	board := NewEmptyBoard()
 
@@ -83,8 +91,8 @@ func NewRandomBoard(teams []string, random *rand.Rand) (*Board, error) {
 	)
 	place(board, flagChooser, random, true, NewUnit(flag, teams[0]))
 	place(board, flagChooser, random, false, NewUnit(flag, teams[1]))
-	teamOneUnits[flag] -= 1
-	teamTwoUnits[flag] -= 1
+	teamOneUnits[unitToIdx[flag]] -= 1
+	teamTwoUnits[unitToIdx[flag]] -= 1
 
 	// bombs with 10, 20, 40, and 40 percent
 	bombChooser, _ := wr.NewChooser(
@@ -96,8 +104,8 @@ func NewRandomBoard(teams []string, random *rand.Rand) (*Board, error) {
 	for i := 0; i < 6; i++ {
 		place(board, bombChooser, random, true, NewUnit(bomb, teams[0]))
 		place(board, bombChooser, random, false, NewUnit(bomb, teams[1]))
-		teamOneUnits[bomb] -= 1
-		teamTwoUnits[bomb] -= 1
+		teamOneUnits[unitToIdx[bomb]] -= 1
+		teamTwoUnits[unitToIdx[bomb]] -= 1
 	}
 
 	// miners in back three with 10, 40, 50 percent
@@ -109,8 +117,8 @@ func NewRandomBoard(teams []string, random *rand.Rand) (*Board, error) {
 	for i := 0; i < 5; i++ {
 		place(board, minerChooser, random, true, NewUnit(miner, teams[0]))
 		place(board, minerChooser, random, false, NewUnit(miner, teams[1]))
-		teamOneUnits[miner] -= 1
-		teamTwoUnits[miner] -= 1
+		teamOneUnits[unitToIdx[miner]] -= 1
+		teamTwoUnits[unitToIdx[miner]] -= 1
 	}
 
 	// scouts in front three with 10, 40, 50 percent
@@ -122,18 +130,18 @@ func NewRandomBoard(teams []string, random *rand.Rand) (*Board, error) {
 	for i := 0; i < 6; i++ {
 		place(board, scoutChooser, random, true, NewUnit(scout, teams[0]))
 		place(board, scoutChooser, random, false, NewUnit(scout, teams[1]))
-		teamOneUnits[scout] -= 1
-		teamTwoUnits[scout] -= 1
+		teamOneUnits[unitToIdx[scout]] -= 1
+		teamTwoUnits[unitToIdx[scout]] -= 1
 	}
 
 	// place remainder randomly
 	for row := 0; row < (BoardSize-2)/2; row++ {
 		for col := 0; col < BoardSize; col++ {
 			if board.board[row][col] == nil {
-				for typ, amt := range teamOneUnits {
+				for i, amt := range teamOneUnits {
 					if amt > 0 {
-						board.board[row][col] = NewUnit(typ, teams[0])
-						teamOneUnits[typ] -= 1
+						board.board[row][col] = NewUnit(idxToUnit[i], teams[0])
+						teamOneUnits[i] -= 1
 						break
 					}
 				}
@@ -143,10 +151,10 @@ func NewRandomBoard(teams []string, random *rand.Rand) (*Board, error) {
 	for row := BoardSize/2 + 1; row < BoardSize; row++ {
 		for col := 0; col < BoardSize; col++ {
 			if board.board[row][col] == nil {
-				for typ, amt := range teamTwoUnits {
+				for i, amt := range teamTwoUnits {
 					if amt > 0 {
-						board.board[row][col] = NewUnit(typ, teams[1])
-						teamTwoUnits[typ] -= 1
+						board.board[row][col] = NewUnit(idxToUnit[i], teams[1])
+						teamTwoUnits[i] -= 1
 						break
 					}
 				}
@@ -158,7 +166,7 @@ func NewRandomBoard(teams []string, random *rand.Rand) (*Board, error) {
 
 func getRandomNotTaken(board *Board, chooser *wr.Chooser, random *rand.Rand, isOne bool) (int, int) {
 	row := chooser.PickSource(random).(int)
-	col := rand.Intn(BoardSize)
+	col := random.Intn(BoardSize)
 	if !isOne {
 		row = BoardSize - row - 1
 	}

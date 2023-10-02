@@ -129,7 +129,7 @@ func (s *Stratego) GetSnapshot(team ...string) (*bg.BoardGameSnapshot, error) {
 	// reveals the winning unit from the last battle to both teams
 	revealRow := -1
 	revealCol := -1
-	if s.state.battle != nil {
+	if s.state.battle != nil && s.state.justBattled {
 		revealRow = s.state.battle.MoveRow
 		revealCol = s.state.battle.MoveColumn
 	}
@@ -160,9 +160,10 @@ func (s *Stratego) GetSnapshot(team ...string) (*bg.BoardGameSnapshot, error) {
 		Teams:   s.state.teams,
 		Winners: s.state.winners,
 		MoreData: StategoSnapshotData{
-			Board:   board,
-			Battle:  s.state.battle,
-			Started: s.state.started,
+			Board:       board,
+			Battle:      s.state.battle,
+			JustBattled: s.state.justBattled,
+			Started:     s.state.started,
 		},
 		Targets: targets,
 		Actions: s.actions,

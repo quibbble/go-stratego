@@ -1,6 +1,8 @@
 package go_stratego
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // Unit Types
 const (

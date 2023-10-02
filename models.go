@@ -15,9 +15,10 @@ type StrategoMoreOptions struct {
 
 // StategoSnapshotData is the game data unique to Statego
 type StategoSnapshotData struct {
-	Board   [BoardSize][BoardSize]*Unit
-	Battle  *Battle
-	Started bool
+	Board       [BoardSize][BoardSize]*Unit
+	Battle      *Battle
+	JustBattled bool
+	Started     bool
 }
 
 type SwitchUnitsActionDetails struct {

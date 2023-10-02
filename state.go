@@ -10,12 +10,13 @@ import (
 )
 
 type state struct {
-	turn    string
-	teams   []string
-	winners []string
-	board   *Board
-	battle  *Battle
-	started bool
+	turn        string
+	teams       []string
+	winners     []string
+	board       *Board
+	battle      *Battle
+	justBattled bool
+	started     bool
 }
 
 func newState(teams []string, random *rand.Rand) (*state, error) {
@@ -156,6 +157,7 @@ func (s *state) MoveUnit(team string, unitRow, unitCol, moveRow, moveCol int) er
 		}
 		s.nextTurn()
 		s.started = true
+		s.justBattled = true
 		s.battle = &Battle{
 			MoveUnitActionDetails: MoveUnitActionDetails{
 				unitRow, unitCol, moveRow, moveCol,
@@ -170,6 +172,7 @@ func (s *state) MoveUnit(team string, unitRow, unitCol, moveRow, moveCol int) er
 		s.board.board[moveRow][moveCol] = unit
 		s.nextTurn()
 		s.started = true
+		s.justBattled = false
 		return nil
 	}
 }

@@ -1,7 +1,6 @@
 package go_stratego
 
 import (
-	"fmt"
 	"math/rand"
 	"testing"
 	"time"
@@ -45,13 +44,13 @@ func Test_BGN(t *testing.T) {
 
 	game, err := bgn.Parse(raw)
 	if err != nil {
-		fmt.Println(err)
+		t.Error(err)
 		t.FailNow()
 	}
 
 	builder := Builder{}
 	if _, err := builder.Load(game); err != nil {
-		fmt.Println(err)
+		t.Error(err)
 		t.FailNow()
 	}
 }

@@ -10,6 +10,7 @@ import (
 var (
 	actionToNotation = map[string]string{
 		ActionSwitchUnits: "s",
+		ActionToggleReady: "r",
 		ActionMoveUnit:    "m",
 	}
 	notationToAction = reverseMap(actionToNotation)

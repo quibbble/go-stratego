@@ -46,7 +46,15 @@ func NewStratego(options *bg.BoardGameOptions) (*Stratego, error) {
 			Status: bgerr.StatusInvalidOption,
 		}
 	}
-	state, err := newState(options.Teams, rand.New(rand.NewSource(details.Seed)))
+	if details.Variant == "" {
+		details.Variant = VariantClassic
+	} else if !contains(Variants, details.Variant) {
+		return nil, &bgerr.Error{
+			Err:    fmt.Errorf("invalid Stratego variant"),
+			Status: bgerr.StatusInvalidOption,
+		}
+	}
+	state, err := newState(options.Teams, details.Variant, rand.New(rand.NewSource(details.Seed)))
 	if err != nil {
 		return nil, &bgerr.Error{
 			Err:    err,
@@ -78,6 +86,18 @@ func (s *Stratego) Do(action *bg.BoardGameAction) error {
 		}
 		if err := s.state.SwitchUnits(action.Team, details.UnitRow, details.UnitColumn, details.SwitchUnitRow, details.SwitchUnitColumn); err != nil {
 			return err
+		}
+		s.actions = append(s.actions, action)
+	case ActionToggleReady:
+		err := s.state.ToggleReady(action.Team)
+		if err != nil {
+			return err
+		}
+		for idx, a := range s.actions {
+			if a.Team == action.Team && a.ActionType == ActionToggleReady {
+				s.actions = append(s.actions[:idx], s.actions[idx+1:]...)
+				break
+			}
 		}
 		s.actions = append(s.actions, action)
 	case ActionMoveUnit:
@@ -134,29 +154,38 @@ func (s *Stratego) GetSnapshot(team ...string) (*bg.BoardGameSnapshot, error) {
 		revealCol = s.state.battle.MoveColumn
 	}
 
-	board := [BoardSize][BoardSize]*Unit{}
+	board := [][]Unit{}
 	for r, row := range s.state.board.board {
+		sRow := make([]Unit, 0)
 		for c, unit := range row {
-			if unit != nil {
+			if unit == nil {
+				sRow = append(sRow, Unit{})
+			} else {
 				if unit.Team != nil {
 					if len(team) == 1 {
 						if *unit.Team == team[0] || revealRow == r && revealCol == c || len(s.state.winners) > 0 {
-							board[r][c] = NewUnit(unit.Type, *unit.Team)
+							sRow = append(sRow, *NewUnit(unit.Type, *unit.Team))
 						} else {
-							board[r][c] = NewUnit("", *unit.Team)
+							sRow = append(sRow, *NewUnit("", *unit.Team))
 						}
 					} else {
-						board[r][c] = NewUnit("", *unit.Team)
+						sRow = append(sRow, *NewUnit("", *unit.Team))
 					}
 				} else {
-					board[r][c] = Water()
+					sRow = append(sRow, *Water())
 				}
 			}
 		}
+		board = append(board, sRow)
+	}
+
+	var turn string
+	if s.state.started {
+		turn = s.state.turn
 	}
 
 	return &bg.BoardGameSnapshot{
-		Turn:    s.state.turn,
+		Turn:    turn,
 		Teams:   s.state.teams,
 		Winners: s.state.winners,
 		MoreData: StategoSnapshotData{
@@ -164,6 +193,8 @@ func (s *Stratego) GetSnapshot(team ...string) (*bg.BoardGameSnapshot, error) {
 			Battle:      s.state.battle,
 			JustBattled: s.state.justBattled,
 			Started:     s.state.started,
+			Ready:       s.state.ready,
+			Variant:     s.options.Variant,
 		},
 		Targets: targets,
 		Actions: s.actions,
@@ -173,9 +204,10 @@ func (s *Stratego) GetSnapshot(team ...string) (*bg.BoardGameSnapshot, error) {
 
 func (s *Stratego) GetBGN() *bgn.Game {
 	tags := map[string]string{
-		"Game":  key,
-		"Teams": strings.Join(s.state.teams, ", "),
-		"Seed":  fmt.Sprintf("%d", s.options.Seed),
+		bgn.GameTag:    key,
+		bgn.TeamsTag:   strings.Join(s.state.teams, ", "),
+		bgn.SeedTag:    fmt.Sprintf("%d", s.options.Seed),
+		bgn.VariantTag: s.options.Variant,
 	}
 	actions := make([]bgn.Action, 0)
 	for _, action := range s.actions {

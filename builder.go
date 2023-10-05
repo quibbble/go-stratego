@@ -30,6 +30,10 @@ func (b *Builder) Load(game *bgn.Game) (bg.BoardGameWithBGN, error) {
 		return nil, loadFailure(fmt.Errorf("missing teams tag"))
 	}
 	teams := strings.Split(teamsStr, ", ")
+	variantStr := game.Tags["Variant"]
+	if !(variantStr == "" || contains(Variants, variantStr)) {
+		return nil, loadFailure(fmt.Errorf("invalid variant value"))
+	}
 	seedStr, ok := game.Tags["Seed"]
 	if !ok {
 		return nil, loadFailure(fmt.Errorf("missing seed tag"))
@@ -39,8 +43,11 @@ func (b *Builder) Load(game *bgn.Game) (bg.BoardGameWithBGN, error) {
 		return nil, loadFailure(err)
 	}
 	g, err := b.CreateWithBGN(&bg.BoardGameOptions{
-		Teams:       teams,
-		MoreOptions: StrategoMoreOptions{Seed: int64(seed)},
+		Teams: teams,
+		MoreOptions: StrategoMoreOptions{
+			Seed:    int64(seed),
+			Variant: variantStr,
+		},
 	})
 	if err != nil {
 		return nil, err

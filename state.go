@@ -13,51 +13,101 @@ type state struct {
 	turn        string
 	teams       []string
 	winners     []string
+	ready       map[string]bool
 	board       *Board
 	battle      *Battle
 	justBattled bool
 	started     bool
 }
 
-func newState(teams []string, random *rand.Rand) (*state, error) {
+func newState(teams []string, variant string, random *rand.Rand) (*state, error) {
 	if random == nil {
 		return nil, fmt.Errorf("random seed is null")
 	}
-	board, err := NewRandomBoard(teams, random)
+	board, err := NewRandomBoard(teams, variant, random)
 	if err != nil {
 		return nil, err
+	}
+	ready := make(map[string]bool)
+	for _, team := range teams {
+		ready[team] = false
 	}
 	return &state{
 		board:   board,
 		teams:   teams,
 		turn:    teams[0],
 		winners: make([]string, 0),
+		ready:   ready,
 	}, nil
 }
 
-func (s *state) SwitchUnits(team string, unitRow, unitCol, switchUnitRow, switchUnitCol int) error {
+func (s *state) ToggleReady(team string) error {
+	if s.started {
+		return &bgerr.Error{
+			Err:    fmt.Errorf("cannot toggle ready when game has already started"),
+			Status: bgerr.StatusInvalidAction,
+		}
+	}
+	s.ready[team] = !s.ready[team]
+	if s.playersReady() {
+		s.started = true
+	}
+	return nil
+}
+
+func (s *state) SwitchUnits(team string, unitRow, unitCol, switchRow, switchCol int) error {
+	boardSize := len(s.board.board)
 	if s.started {
 		return &bgerr.Error{
 			Err:    fmt.Errorf("cannot switch units when game has already started"),
-			Status: bgerr.StatusWrongTurn,
+			Status: bgerr.StatusInvalidAction,
 		}
 	}
-	if unitRow >= BoardSize || unitRow < 0 || unitCol >= BoardSize || unitCol < 0 ||
-		switchUnitRow >= BoardSize || switchUnitRow < 0 || switchUnitCol >= BoardSize || switchUnitCol < 0 {
+	if s.ready[team] {
+		return &bgerr.Error{
+			Err:    fmt.Errorf("cannot switch units when you are ready"),
+			Status: bgerr.StatusInvalidAction,
+		}
+	}
+	if unitRow >= boardSize || unitRow < 0 || unitCol >= boardSize || unitCol < 0 ||
+		switchRow >= boardSize || switchRow < 0 || switchCol >= boardSize || switchCol < 0 {
 		return &bgerr.Error{
 			Err:    fmt.Errorf("index out of bounds"),
 			Status: bgerr.StatusInvalidAction,
 		}
 	}
 	unit := s.board.board[unitRow][unitCol]
-	switchUnit := s.board.board[switchUnitRow][switchUnitCol]
-	if unit.Team == nil || switchUnit.Team == nil {
+	if unit == nil {
+		return &bgerr.Error{
+			Err:    fmt.Errorf("no unit at %d,%d", unitRow, unitCol),
+			Status: bgerr.StatusInvalidAction,
+		}
+	}
+
+	var minRow, maxRow int
+	if *unit.Team == s.teams[0] {
+		minRow = 0
+		maxRow = (boardSize / 2) - 2
+	} else {
+		minRow = (boardSize / 2) + 1
+		maxRow = boardSize - 1
+	}
+
+	if switchRow < minRow || switchRow > maxRow {
+		return &bgerr.Error{
+			Err:    fmt.Errorf("cannot switch unit outside of your side"),
+			Status: bgerr.StatusInvalidAction,
+		}
+	}
+
+	swtch := s.board.board[switchRow][switchCol]
+	if unit.Team == nil || (swtch != nil && swtch.Team == nil) {
 		return &bgerr.Error{
 			Err:    fmt.Errorf("cannot switch units that have no team"),
 			Status: bgerr.StatusInvalidAction,
 		}
 	}
-	if *unit.Team != *switchUnit.Team {
+	if swtch != nil && *unit.Team != *swtch.Team {
 		return &bgerr.Error{
 			Err:    fmt.Errorf("cannot switch units that are not on the same team"),
 			Status: bgerr.StatusInvalidAction,
@@ -69,20 +119,27 @@ func (s *state) SwitchUnits(team string, unitRow, unitCol, switchUnitRow, switch
 			Status: bgerr.StatusInvalidAction,
 		}
 	}
-	s.board.board[unitRow][unitCol] = switchUnit
-	s.board.board[switchUnitRow][switchUnitCol] = unit
+	s.board.board[unitRow][unitCol] = swtch
+	s.board.board[switchRow][switchCol] = unit
 	return nil
 }
 
 func (s *state) MoveUnit(team string, unitRow, unitCol, moveRow, moveCol int) error {
+	boardSize := len(s.board.board)
+	if !s.playersReady() {
+		return &bgerr.Error{
+			Err:    fmt.Errorf("both players are not ready"),
+			Status: bgerr.StatusInvalidAction,
+		}
+	}
 	if team != s.turn {
 		return &bgerr.Error{
 			Err:    fmt.Errorf("%s cannot play on %s turn", team, s.turn),
 			Status: bgerr.StatusWrongTurn,
 		}
 	}
-	if unitRow >= BoardSize || unitRow < 0 || unitCol >= BoardSize || unitCol < 0 ||
-		moveRow >= BoardSize || moveRow < 0 || moveCol >= BoardSize || moveCol < 0 {
+	if unitRow >= boardSize || unitRow < 0 || unitCol >= boardSize || unitCol < 0 ||
+		moveRow >= boardSize || moveRow < 0 || moveCol >= boardSize || moveCol < 0 {
 		return &bgerr.Error{
 			Err:    fmt.Errorf("index out of bounds"),
 			Status: bgerr.StatusInvalidAction,
@@ -156,7 +213,6 @@ func (s *state) MoveUnit(team string, unitRow, unitCol, moveRow, moveCol int) er
 			s.winners = []string{*attackedUnit.Team} // the other team ran out of movable units
 		}
 		s.nextTurn()
-		s.started = true
 		s.justBattled = true
 		s.battle = &Battle{
 			MoveUnitActionDetails: MoveUnitActionDetails{
@@ -235,6 +291,14 @@ func (s *state) nextTurn() {
 	}
 }
 
+func (s *state) playersReady() bool {
+	r := true
+	for _, b := range s.ready {
+		r = r && b
+	}
+	return r
+}
+
 func (s *state) SetWinners(winners []string) error {
 	for _, winner := range winners {
 		if !contains(s.teams, winner) {
@@ -273,7 +337,12 @@ func (s *state) targets() []*bg.BoardGameAction {
 }
 
 func (s *state) message() string {
-	message := fmt.Sprintf("%s must move a unit", s.turn)
+	var message string
+	if s.started {
+		message = fmt.Sprintf("%s must move a unit", s.turn)
+	} else {
+		message = "arrange your units"
+	}
 	if len(s.winners) > 0 {
 		message = fmt.Sprintf("%s wins", s.winners[0])
 	}

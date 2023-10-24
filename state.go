@@ -152,7 +152,7 @@ func (s *state) MoveUnit(team string, unitRow, unitCol, moveRow, moveCol int) er
 			Status: bgerr.StatusInvalidAction,
 		}
 	}
-	if *unit.Team != team {
+	if unit.Team == nil || *unit.Team != team {
 		return &bgerr.Error{
 			Err:    fmt.Errorf("cannot move a unit not part of your team"),
 			Status: bgerr.StatusInvalidAction,

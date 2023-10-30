@@ -83,6 +83,12 @@ func (s *state) SwitchUnits(team string, unitRow, unitCol, switchRow, switchCol 
 			Status: bgerr.StatusInvalidAction,
 		}
 	}
+	if unit.Team == nil {
+		return &bgerr.Error{
+			Err:    fmt.Errorf("cannot switch unit at %d,%d", unitRow, unitCol),
+			Status: bgerr.StatusInvalidAction,
+		}
+	}
 
 	var minRow, maxRow int
 	if *unit.Team == s.teams[0] {

@@ -79,9 +79,11 @@ func (b *Board) possibleMoves(row, col int) [][]int {
 // retrieves the number of active (movable) units for a given team
 func (b *Board) numActive(team string) int {
 	count := 0
-	for _, row := range b.board {
-		for _, unit := range row {
-			if unit != nil && unit.Team != nil && *unit.Team == team && unit.Type != bomb && unit.Type != flag {
+	for r, row := range b.board {
+		for c, unit := range row {
+			if unit != nil && unit.Team != nil &&
+				*unit.Team == team &&
+				len(b.possibleMoves(r, c)) > 0 {
 				count += 1
 			}
 		}

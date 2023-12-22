@@ -18,12 +18,16 @@ const (
 	VariantQuickBattle = "QuickBattle" // 8x8 quick play Stratego
 )
 
-var Variants = []string{VariantClassic, VariantQuickBattle}
+var variants = []string{VariantClassic, VariantQuickBattle}
 
 // StrategoMoreOptions are the additional options for creating a game of Stratego
 type StrategoMoreOptions struct {
 	Seed    int64
 	Variant string
+}
+
+type StrategoMoreInfo struct {
+	Variants []string
 }
 
 // StategoSnapshotData is the game data unique to Statego

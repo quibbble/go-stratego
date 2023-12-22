@@ -48,7 +48,7 @@ func NewStratego(options *bg.BoardGameOptions) (*Stratego, error) {
 	}
 	if details.Variant == "" {
 		details.Variant = VariantClassic
-	} else if !contains(Variants, details.Variant) {
+	} else if !contains(variants, details.Variant) {
 		return nil, &bgerr.Error{
 			Err:    fmt.Errorf("invalid Stratego variant"),
 			Status: bgerr.StatusInvalidOption,
